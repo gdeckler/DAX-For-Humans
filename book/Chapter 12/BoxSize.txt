@@ -1,0 +1,56 @@
+Box Size = 
+    VAR __Height = MAX( 'Orders'[UOM_HEIGHT] )
+    VAR __Width = MAX( 'Orders'[UOM_WIDTH] )
+    VAR __Length = MAX( 'Orders'[UOM_LENGTH] )
+    VAR __Measure1 = MINX( {__Height, __Width, __Length }, [Value] )
+    VAR __Measure2 = 
+        IF( 
+            __Height = __Width && __Height = __Length, 
+            __Height,
+            MINX( 
+                EXCEPT(
+                    { __Height, __Width, __Length },
+                    { __Measure1 } 
+                ),
+                [Value]
+            )
+        )
+    VAR __Measure3 = MAXX( { __Height, __Width, __Length }, [Value] )
+    VAR __BoxTable =
+        ADDCOLUMNS(
+            ADDCOLUMNS(
+                ADDCOLUMNS(
+                    'Box Sizes',
+                    "__Measure1", MINX( { [Height], [Width], [Length] }, [Value] )
+                ),
+                "__Measure2", 
+                    IF(
+                        [Height] = [Width] && [Height] = [Length],
+                        [Height],
+                        MINX( 
+                            EXCEPT(
+                                { [Height], [Width], [Length] },
+                                { [__Measure1] }
+                            ),
+                            [Value]
+                        )
+                    )
+            ),
+            "__Measure3", MAXX( { [Height], [Width], [Length] }, [Value] )
+        )
+    VAR __Table1 = 
+        ADDCOLUMNS(
+            __BoxTable,
+            "Fit1", IF( __Measure1 <= [__Measure1], 1, 0 ),
+            "Fit2", IF( __Measure2 <= [__Measure2], 1, 0 ),
+            "Fit3", IF( __Measure3 <= [__Measure3], 1, 0 )
+        )
+    VAR __Table = 
+        FILTER(
+            __Table1,
+            [Fit1] = 1 && [Fit2] = 1 && [Fit3] = 1
+        )
+    VAR __MinBoxVolume = MINX( __Table, [Volume] )
+    VAR __Result = MAXX( FILTER( __Table, [Volume] = __MinBoxVolume ), [Size] )
+RETURN
+    __Result

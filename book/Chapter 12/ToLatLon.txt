@@ -1,0 +1,82 @@
+Latitude Longitude = 
+    VAR northing = [Northing]
+    VAR easting = [Easting]
+
+    VAR radToDeg = 180 / PI()
+    VAR degToRad = PI() / 180
+
+    VAR a    = 6377563.396
+    VAR b    = 6356256.909          // Airy 1830 major & minor semi-axes
+    VAR f0   = 0.9996012717         // NatGrid scale factor on central meridian
+    VAR lat0 = 49 * degToRad
+    VAR lon0 = -2 * degToRad        // NatGrid true origin
+    VAR n0   = -100000.0
+    VAR e0   = 400000.0             // northing & easting of true origin, metres
+    VAR e2   = 1 - (b*b)/(a*a)      // eccentricity squared
+    VAR n    = (a - b) / (a + b)
+    VAR n2   = n * n
+    VAR n3   = n * n * n
+
+    VAR m = 0
+    VAR lat1 = (northing-n0-m)/(a*f0) + lat0
+    VAR ma1 = (1 + n + (5/4)*n2 + (5/4)*n3) * (lat1 - lat0)
+    VAR mb1 = (3*n + 3*n*n + (21/8)*n3) * SIN(lat1-lat0) * COS(lat1+lat0)
+    VAR mc1 = ((15/8)*n2 + (15/8)*n3) * SIN(2*(lat1-lat0)) * COS(2*(lat1+lat0))
+    VAR md1 = (35 / 24) * n3 * SIN(3*(lat1-lat0)) * COS(3*(lat1+lat0))
+    VAR m1 = b * f0 * (ma1 - mb1 + mc1 - md1) // meridional arc
+
+    VAR lat2 = (northing-n0-m1)/(a*f0) + lat1
+    VAR ma2 = (1 + n + (5/4)*n2 + (5/4)*n3) * (lat2 - lat0)
+    VAR mb2 = (3*n + 3*n*n + (21/8)*n3) * SIN(lat2-lat0) * COS(lat2+lat0)
+    VAR mc2 = ((15/8)*n2 + (15/8)*n3) * SIN(2*(lat2-lat0)) * COS(2*(lat2+lat0))
+    VAR md2 = (35 / 24) * n3 * SIN(3*(lat2-lat0)) * COS(3*(lat2+lat0))
+    VAR m2 = b * f0 * (ma2 - mb2 + mc2 - md2) // meridional arc
+
+    VAR lat3 = (northing-n0-m2)/(a*f0) + lat2
+    VAR ma3 = (1 + n + (5/4)*n2 + (5/4)*n3) * (lat3 - lat0)
+    VAR mb3 = (3*n + 3*n*n + (21/8)*n3) * SIN(lat3-lat0) * COS(lat3+lat0)
+    VAR mc3 = ((15/8)*n2 + (15/8)*n3) * SIN(2*(lat3-lat0)) * COS(2*(lat3+lat0))
+    VAR md3 = (35 / 24) * n3 * SIN(3*(lat3-lat0)) * COS(3*(lat3+lat0))
+    VAR m3 = b * f0 * (ma3 - mb3 + mc3 - md3) // meridional arc
+
+    VAR lat4 = (northing-n0-m3)/(a*f0) + lat3
+    VAR ma4 = (1 + n + (5/4)*n2 + (5/4)*n3) * (lat4 - lat0)
+    VAR mb4 = (3*n + 3*n*n + (21/8)*n3) * SIN(lat4-lat0) * COS(lat4+lat0)
+    VAR mc4 = ((15/8)*n2 + (15/8)*n3) * SIN(2*(lat4-lat0)) * COS(2*(lat4+lat0))
+    VAR md4 = (35 / 24) * n3 * SIN(3*(lat4-lat0)) * COS(3*(lat4+lat0))
+    VAR m4 = b * f0 * (ma4 - mb4 + mc4 - md4) // meridional arc
+
+    VAR lat = (northing-n0-m4)/(a*f0) + lat4
+
+    VAR cosLat = COS(lat)
+    VAR sinLat = SIN(lat)
+    VAR nu = a * f0 / SQRT(1-e2*sinLat*sinLat) // transverse radius of curvature
+    VAR rho = a * f0 * (1 - e2) / POWER(1-e2*sinLat*sinLat, 1.5) // meridional radius of curvature
+    VAR eta2 = nu/rho - 1
+    VAR tanLat = TAN(lat)
+    VAR tan2lat = tanLat * tanLat
+    VAR tan4lat = tan2lat * tan2lat
+    VAR tan6lat = tan4lat * tan2lat
+    VAR secLat = 1 / cosLat
+    VAR nu3 = nu * nu * nu
+    VAR nu5 = nu3 * nu * nu
+    VAR nu7 = nu5 * nu * nu
+    VAR vii = tanLat / (2 * rho * nu)
+    VAR viii = tanLat / (24 * rho * nu3) * (5 + 3*tan2lat + eta2 - 9*tan2lat*eta2)
+    VAR ix = tanLat / (720 * rho * nu5) * (61 + 90*tan2lat + 45*tan4lat)
+    VAR x = secLat / nu
+    VAR xi = secLat / (6 * nu3) * (nu/rho + 2*tan2lat)
+    VAR xii = secLat / (120 * nu5) * (5 + 28*tan2lat + 24*tan4lat)
+    VAR xiia = secLat / (5040 * nu7) * (61 + 662*tan2lat + 1320*tan4lat + 720*tan6lat)
+    VAR de = easting - e0
+    VAR de2 = de * de
+    VAR de3 = de2 * de
+    VAR de4 = de2 * de2
+    VAR de5 = de3 * de2
+    VAR de6 = de4 * de2
+    VAR de7 = de5 * de2
+    VAR final_lat = lat - vii*de2 + viii*de4 - ix*de6
+    VAR final_lon = lon0 + x*de - xi*de3 + xii*de5 - xiia*de7
+    VAR result = final_lat * radToDeg & "," & final_lon * radToDeg
+RETURN
+    result
